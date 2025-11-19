@@ -16,10 +16,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'analyzers'))
 from iam_collector import IAMCollector
 from storage_collector import StorageCollector
 from logging_collector import LoggingCollector
+from networking_collector import NetworkingCollector
 from iam_analyzer import IAMAnalyzer
 from storage_analyzer import StorageAnalyzer
 from logging_analyzer import LoggingAnalyzer
 from monitoring_analyzer import MonitoringAnalyzer
+from networking_analyzer import NetworkingAnalyzer
 
 
 def print_banner():
@@ -117,6 +119,28 @@ def run_monitoring_audit(profile: str, region: str, output_dir: str, all_regions
     print("\n" + "-"*80)
     report_file = os.path.join(output_dir, "monitoring_compliance_report.json")
     analyzer = MonitoringAnalyzer(data_file)
+    analyzer.analyze_all()
+    analyzer.save_report(report_file)
+
+    return analyzer.findings
+
+
+def run_networking_audit(profile: str, region: str, output_dir: str, all_regions: bool = False):
+    """Run Networking audit (Section 5 - VPC, Security Groups, NACLs)"""
+    print("\n" + "="*80)
+    print("SECTION 5: NETWORKING (VPC, Security Groups, NACLs)")
+    print("="*80)
+
+    # Collect data
+    data_file = os.path.join(output_dir, "networking_data.json")
+    collector = NetworkingCollector(profile=profile, region=region)
+    collector.collect_all(all_regions=all_regions)
+    collector.save_to_file(data_file)
+
+    # Analyze compliance
+    print("\n" + "-"*80)
+    report_file = os.path.join(output_dir, "networking_compliance_report.json")
+    analyzer = NetworkingAnalyzer(data_file)
     analyzer.analyze_all()
     analyzer.save_report(report_file)
 
@@ -245,7 +269,7 @@ Examples:
 
     parser.add_argument("--profile", default="default", help="AWS profile to use (default: default)")
     parser.add_argument("--region", default="us-east-1", help="Primary AWS region (default: us-east-1)")
-    parser.add_argument("--category", choices=["iam", "storage", "logging", "monitoring", "all"], default="all",
+    parser.add_argument("--category", choices=["iam", "storage", "logging", "monitoring", "networking", "all"], default="all",
                         help="Category to audit (default: all)")
     parser.add_argument("--level", type=int, choices=[1, 2], help="CIS Level to audit (1 or 2)")
     parser.add_argument("--all-regions", action="store_true", help="Collect data from all AWS regions")
@@ -287,6 +311,10 @@ Examples:
         if args.category in ["monitoring", "all"]:
             findings = run_monitoring_audit(args.profile, args.region, output_dir, args.all_regions)
             all_findings["Monitoring"] = findings
+
+        if args.category in ["networking", "all"]:
+            findings = run_networking_audit(args.profile, args.region, output_dir, args.all_regions)
+            all_findings["Networking"] = findings
 
         # Generate summary
         if all_findings:

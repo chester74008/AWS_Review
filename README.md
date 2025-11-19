@@ -19,7 +19,7 @@ See [docs/guides/QUICKSTART.md](docs/guides/QUICKSTART.md) for detailed setup in
 
 ## Current Capabilities
 
-**46 Automated Compliance Checks** (64% coverage of CIS controls)
+**54 Automated Compliance Checks** (75% coverage of CIS controls)
 
 | Section | Checks | Status |
 |---------|--------|--------|
@@ -27,7 +27,7 @@ See [docs/guides/QUICKSTART.md](docs/guides/QUICKSTART.md) for detailed setup in
 | Storage (S3, RDS, EFS) | 9 | ✅ Complete |
 | Logging (CloudTrail, Config, VPC) | 8 | ✅ Complete |
 | Monitoring (CloudWatch Metric Filters & Alarms) | 16 | ✅ Complete |
-| Networking (VPC, Security Groups) | 0 | ⚠️ Planned |
+| Networking (VPC, Security Groups, NACLs) | 8 | ✅ Complete |
 
 ## Project Structure
 
@@ -43,29 +43,33 @@ AWS_Review/
 │   ├── collectors/                # AWS data collection
 │   │   ├── iam_collector.py       # IAM data
 │   │   ├── storage_collector.py   # S3, RDS, EFS data
-│   │   └── logging_collector.py   # CloudTrail, Config, VPC data
+│   │   ├── logging_collector.py   # CloudTrail, Config, VPC data
+│   │   └── networking_collector.py # VPC, Security Groups, NACLs data
 │   └── analyzers/                 # Compliance analysis
 │       ├── iam_analyzer.py        # 13 IAM checks
 │       ├── storage_analyzer.py    # 9 storage checks
 │       ├── logging_analyzer.py    # 8 logging checks
-│       └── monitoring_analyzer.py # 16 monitoring checks
+│       ├── monitoring_analyzer.py # 16 monitoring checks
+│       └── networking_analyzer.py # 8 networking checks
 │
 ├── config/                        # Configuration files
 │   └── config.example.json        # Example config
 │
 ├── reports/                       # Generated audit reports (git-ignored)
 │   └── audit_TIMESTAMP/
-│       ├── audit_summary.json                # Overall compliance summary
-│       ├── audit_all_findings.csv            # All findings (CSV)
-│       ├── audit_failures_only.csv           # Failures only (CSV)
-│       ├── iam_compliance_report.json        # IAM findings (JSON)
-│       ├── iam_compliance_report.csv         # IAM findings (CSV)
-│       ├── storage_compliance_report.json    # Storage findings (JSON)
-│       ├── storage_compliance_report.csv     # Storage findings (CSV)
-│       ├── logging_compliance_report.json    # Logging findings (JSON)
-│       ├── logging_compliance_report.csv     # Logging findings (CSV)
-│       ├── monitoring_compliance_report.json # Monitoring findings (JSON)
-│       └── monitoring_compliance_report.csv  # Monitoring findings (CSV)
+│       ├── audit_summary.json                 # Overall compliance summary
+│       ├── audit_all_findings.csv             # All findings (CSV)
+│       ├── audit_failures_only.csv            # Failures only (CSV)
+│       ├── iam_compliance_report.json         # IAM findings (JSON)
+│       ├── iam_compliance_report.csv          # IAM findings (CSV)
+│       ├── storage_compliance_report.json     # Storage findings (JSON)
+│       ├── storage_compliance_report.csv      # Storage findings (CSV)
+│       ├── logging_compliance_report.json     # Logging findings (JSON)
+│       ├── logging_compliance_report.csv      # Logging findings (CSV)
+│       ├── monitoring_compliance_report.json  # Monitoring findings (JSON)
+│       ├── monitoring_compliance_report.csv   # Monitoring findings (CSV)
+│       ├── networking_compliance_report.json  # Networking findings (JSON)
+│       └── networking_compliance_report.csv   # Networking findings (CSV)
 │
 ├── docs/                          # Documentation
 │   ├── guides/                    # User guides
@@ -110,7 +114,7 @@ Required packages:
 ### Quick Commands
 
 ```bash
-# Run all sections (IAM + Storage + Logging + Monitoring)
+# Run all sections (IAM + Storage + Logging + Monitoring + Networking)
 python scripts/run_audit.py --category all --profile default
 
 # Run specific section
@@ -118,6 +122,7 @@ python scripts/run_audit.py --category iam --profile default
 python scripts/run_audit.py --category storage --profile default
 python scripts/run_audit.py --category logging --profile default
 python scripts/run_audit.py --category monitoring --profile default
+python scripts/run_audit.py --category networking --profile default
 
 # Scan all regions (slow - 10-20 minutes)
 python scripts/run_audit.py --category all --profile default --all-regions
@@ -134,6 +139,7 @@ python -m json.tool reports/audit_*/iam_compliance_report.json
 python -m json.tool reports/audit_*/storage_compliance_report.json
 python -m json.tool reports/audit_*/logging_compliance_report.json
 python -m json.tool reports/audit_*/monitoring_compliance_report.json
+python -m json.tool reports/audit_*/networking_compliance_report.json
 
 # Open CSV reports in Excel
 # All findings across all sections
@@ -147,6 +153,7 @@ reports/audit_*/iam_compliance_report.csv
 reports/audit_*/storage_compliance_report.csv
 reports/audit_*/logging_compliance_report.csv
 reports/audit_*/monitoring_compliance_report.csv
+reports/audit_*/networking_compliance_report.csv
 ```
 
 See [docs/reference/QUICK_REFERENCE.md](docs/reference/QUICK_REFERENCE.md) for all commands.
@@ -157,8 +164,8 @@ See [docs/reference/QUICK_REFERENCE.md](docs/reference/QUICK_REFERENCE.md) for a
 ================================================================================
 AUDIT SUMMARY
 ================================================================================
-Overall Compliance: 65.45%
-Total Checks: 46
+Overall Compliance: 66.67%
+Total Checks: 54
 
 IAM:
   Compliance: 69.23%
@@ -180,6 +187,11 @@ Monitoring:
   Passed: 3/16
   Failed: 12
   Manual: 1
+
+Networking:
+  Compliance: 75.00%
+  Passed: 6/8
+  Failed: 2
 ```
 
 ## Documentation
@@ -226,15 +238,16 @@ See [COMMON_ERRORS.md](docs/reference/COMMON_ERRORS.md) for complete troubleshoo
 - ✅ Storage Analyzer (9 checks)
 - ✅ Logging Analyzer (8 checks)
 - ✅ Monitoring Analyzer (16 checks - metric filters & alarms)
+- ✅ Networking Analyzer (8 checks - VPC, Security Groups, NACLs)
 - ✅ Multi-region support
 - ✅ JSON reporting
 - ✅ CSV export (Excel-ready)
-- ✅ 64% CIS coverage (46/72 controls)
+- ✅ 75% CIS coverage (54/72 controls)
 
 ### Coming Soon
-- ⚠️ Networking Analyzer (9 checks)
 - ⚠️ HTML/PDF report generation
 - ⚠️ Auto-remediation framework
+- ⚠️ Additional networking controls
 
 See [FIXES_AND_IMPROVEMENTS.md](docs/FIXES_AND_IMPROVEMENTS.md) for detailed roadmap.
 
