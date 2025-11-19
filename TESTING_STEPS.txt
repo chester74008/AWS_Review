@@ -1,0 +1,323 @@
+================================================================================
+AWS REVIEW PROJECT - TESTING STEPS
+================================================================================
+
+Current Status (based on test_setup.py):
+  [OK] Python 3.13.3 installed
+  [OK] pandas and openpyxl packages installed
+  [OK] All project files present
+  [FAIL] AWS CLI not installed yet
+  [FAIL] AWS credentials not configured yet
+
+================================================================================
+STEP-BY-STEP TESTING INSTRUCTIONS
+================================================================================
+
+STEP 1: Install AWS CLI v2
+---------------------------
+1. Download AWS CLI v2 installer for Windows:
+   https://awscli.amazonaws.com/AWSCLIV2.msi
+
+2. Run the installer (double-click the .msi file)
+
+3. Restart your terminal/command prompt
+
+4. Verify installation:
+   aws --version
+
+   Expected output: aws-cli/2.x.x Python/3.x.x Windows/...
+
+
+STEP 2: Configure AWS Credentials
+----------------------------------
+You need AWS access credentials. Choose ONE option:
+
+OPTION A - Use Existing AWS Account:
+   1. Log into AWS Console: https://console.aws.amazon.com
+   2. Go to: IAM → Users → Your Username → Security Credentials
+   3. Click "Create access key"
+   4. Save the Access Key ID and Secret Access Key
+
+OPTION B - Create New IAM User for Testing:
+   1. Log into AWS Console
+   2. Go to: IAM → Users → Add User
+   3. Username: "aws-reviewer"
+   4. Access type: "Programmatic access"
+   5. Permissions: Attach "ReadOnlyAccess" policy
+   6. Save the Access Key ID and Secret Access Key
+
+OPTION C - Use AWS Free Tier Account:
+   1. Sign up at: https://aws.amazon.com/free/
+   2. Create IAM user as in Option B
+
+Then configure AWS CLI:
+   aws configure
+
+   Enter when prompted:
+   - AWS Access Key ID: [paste your key]
+   - AWS Secret Access Key: [paste your secret]
+   - Default region name: us-east-1
+   - Default output format: json
+
+
+STEP 3: Verify Setup
+---------------------
+Run the setup verification script:
+
+   cd C:\Projects\AWS_Review
+   python test_setup.py
+
+Expected output should show all [OK]:
+   [OK] Python Version: Python 3.13.3
+   [OK] Package: pandas: Installed
+   [OK] Package: openpyxl: Installed
+   [OK] AWS CLI Installed: aws-cli/2.x.x...
+   [OK] AWS Credentials: Account: 123456789012, User: yourname
+   [OK] AWS IAM Read Permission: Can read IAM data
+   [OK] File: scripts/collectors/iam_collector.py: Found
+   [OK] File: scripts/analyzers/iam_analyzer.py: Found
+   [OK] File: scripts/run_audit.py: Found
+   [OK] File: requirements.txt: Found
+   [OK] File: cis_aws_controls.json: Found
+
+   Passed: 6/6 checks
+
+
+STEP 4: Run Test - IAM Data Collector
+--------------------------------------
+This is the first real test with AWS:
+
+   python scripts/collectors/iam_collector.py --profile default --output test_iam_data.json
+
+Expected output:
+   ============================================================
+   Starting IAM data collection...
+   ============================================================
+   Generating IAM credential report...
+   Collecting IAM password policy...
+   Collecting IAM users...
+   Collecting data for user: alice
+   Collecting data for user: bob
+   ...
+   IAM data collection complete!
+   Data saved to: test_iam_data.json
+
+Check the file was created:
+   ls -lh test_iam_data.json
+
+
+STEP 5: Run Test - IAM Analyzer
+--------------------------------
+Analyze the collected data:
+
+   python scripts/analyzers/iam_analyzer.py --input test_iam_data.json --output test_iam_report.json
+
+Expected output:
+   ============================================================
+   Starting IAM compliance analysis...
+   ============================================================
+
+   Analysis complete! Total findings: 13
+     PASS: 10
+     FAIL: 3
+     MANUAL: 0
+   Report saved to: test_iam_report.json
+
+View the report:
+   python -m json.tool test_iam_report.json
+
+
+STEP 6: Run Full IAM Audit
+---------------------------
+Run the complete IAM audit (collector + analyzer):
+
+   python scripts/run_audit.py --category iam --profile default
+
+Expected output:
+   ================================================================================
+   CIS AWS FOUNDATIONS BENCHMARK v5.0.0 - AUTOMATED AUDIT
+   ================================================================================
+   Audit started: 2024-01-14 14:30:00
+
+   AWS Profile: default
+   Primary Region: us-east-1
+   Category: iam
+
+   ================================================================================
+   SECTION 1: IDENTITY AND ACCESS MANAGEMENT (IAM)
+   ================================================================================
+   [... collection and analysis output ...]
+
+   ================================================================================
+   AUDIT SUMMARY
+   ================================================================================
+   Overall Compliance: 76.92%
+   Total Checks: 13
+
+   IAM:
+     Compliance: 76.92%
+     Passed: 10/13
+     Failed: 3
+     Manual: 0
+
+   Detailed reports saved to: reports/audit_20240114_143000
+
+
+STEP 7: View Results
+--------------------
+Check the generated reports:
+
+   # List report files
+   ls -R reports/
+
+   # View summary
+   python -m json.tool reports/audit_*/audit_summary.json
+
+   # View detailed findings
+   python -m json.tool reports/audit_*/iam_compliance_report.json
+
+   # View raw data (optional)
+   python -m json.tool reports/audit_*/iam_data.json
+
+
+STEP 8 (Optional): Test Storage and Logging
+--------------------------------------------
+If you have S3 buckets, RDS instances, or other AWS resources:
+
+   # Storage audit
+   python scripts/collectors/storage_collector.py --profile default --output test_storage.json
+
+   # Logging audit
+   python scripts/collectors/logging_collector.py --profile default --output test_logging.json
+
+
+STEP 9 (Optional): Multi-Region Audit
+--------------------------------------
+WARNING: This takes 10-20 minutes and scans all AWS regions
+
+   python scripts/run_audit.py --category iam --profile default --all-regions
+
+
+================================================================================
+COMMON ISSUES AND SOLUTIONS
+================================================================================
+
+Issue: "aws: command not found"
+Solution: Install AWS CLI from https://awscli.amazonaws.com/AWSCLIV2.msi
+          Then restart your terminal
+
+Issue: "Unable to locate credentials"
+Solution: Run: aws configure
+          Enter your AWS Access Key ID and Secret Access Key
+
+Issue: "AccessDenied" or "UnauthorizedOperation"
+Solution: Your IAM user needs read permissions
+          Attach "ReadOnlyAccess" policy to your IAM user
+
+Issue: "ModuleNotFoundError: No module named 'pandas'"
+Solution: Run: pip install -r requirements.txt
+
+Issue: "No such file or directory"
+Solution: Make sure you're in the project directory:
+          cd C:\Projects\AWS_Review
+
+Issue: Slow performance
+Solution: Don't use --all-regions for initial testing
+          Run specific categories (--category iam)
+
+
+================================================================================
+WHAT TO EXPECT IN RESULTS
+================================================================================
+
+New/Test AWS Account:
+  - Most checks will PASS
+  - May have few IAM users
+  - Might fail on root account security (if root has access keys)
+
+Development Account:
+  - Some failures expected
+  - Common issues: old access keys, missing MFA, direct policy attachments
+
+Production Account:
+  - Should mostly PASS
+  - Any CRITICAL/HIGH failures need immediate attention
+
+
+================================================================================
+INTERPRETING FINDINGS
+================================================================================
+
+Finding Statuses:
+  PASS - Requirement is met (good!)
+  FAIL - Requirement not met (needs fixing)
+  MANUAL - Requires manual verification
+
+Severity Levels:
+  CRITICAL - Fix immediately (e.g., root account security)
+  HIGH - Fix within days (e.g., missing MFA)
+  MEDIUM - Fix within weeks (e.g., old access keys)
+  LOW - Fix when convenient
+
+
+Example FAIL Finding:
+{
+  "control": "1.3",
+  "title": "Root user has active access keys",
+  "status": "FAIL",
+  "severity": "CRITICAL",
+  "details": "Root account has active access keys. Key1: true, Key2: false"
+}
+
+Action: Delete root access keys immediately!
+
+
+================================================================================
+NEXT STEPS AFTER TESTING
+================================================================================
+
+1. Review all FAIL findings in the report
+2. Prioritize by severity (CRITICAL → HIGH → MEDIUM → LOW)
+3. Implement fixes in AWS Console or via CLI
+4. Re-run audit to verify fixes
+5. Schedule regular audits (weekly/monthly)
+6. Expand to other categories (storage, logging)
+
+
+================================================================================
+NEED HELP?
+================================================================================
+
+1. Run: python test_setup.py (to check your environment)
+2. Read: TESTING_GUIDE.md (detailed troubleshooting)
+3. Read: USAGE.md (all available options)
+4. Read: PROJECT_SUMMARY.md (complete documentation)
+
+
+================================================================================
+QUICK REFERENCE - ESSENTIAL COMMANDS
+================================================================================
+
+Setup:
+  aws --version                    # Check AWS CLI
+  aws configure                    # Configure credentials
+  python test_setup.py             # Verify everything
+
+Testing:
+  python scripts/collectors/iam_collector.py --profile default --output test.json
+  python scripts/analyzers/iam_analyzer.py --input test.json --output report.json
+  python scripts/run_audit.py --category iam --profile default
+
+View Results:
+  ls reports/audit_*/
+  python -m json.tool reports/audit_*/audit_summary.json
+
+
+================================================================================
+YOU'RE READY!
+================================================================================
+
+Start with Step 1 above and work through each step.
+The setup script will help verify each component is working.
+
+Good luck with your AWS security audits!

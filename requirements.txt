@@ -1,0 +1,11 @@
+# AWS Review - CIS Benchmark Requirements
+
+# AWS SDK
+boto3>=1.28.0
+
+# Data processing
+pandas>=2.0.0
+openpyxl>=3.1.0
+
+# CLI tools (installed separately)
+# - AWS CLI v2: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html

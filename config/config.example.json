@@ -1,0 +1,47 @@
+{
+  "audit_settings": {
+    "default_profile": "default",
+    "default_region": "us-east-1",
+    "enable_all_regions": false,
+    "cis_level": 1,
+    "output_directory": "reports"
+  },
+  "controls": {
+    "enabled_sections": [
+      "iam",
+      "storage",
+      "logging",
+      "monitoring",
+      "networking"
+    ],
+    "skip_controls": [
+      "1.1",
+      "1.2",
+      "1.5"
+    ]
+  },
+  "notifications": {
+    "enabled": false,
+    "email": "",
+    "sns_topic_arn": "",
+    "notify_on_critical": true,
+    "notify_on_high": true,
+    "notify_on_medium": false
+  },
+  "remediation": {
+    "auto_remediate": false,
+    "dry_run": true,
+    "enabled_remediations": []
+  },
+  "reporting": {
+    "formats": ["json", "html", "pdf"],
+    "include_passed_checks": true,
+    "include_raw_data": false,
+    "compliance_threshold": 80.0
+  },
+  "multi_account": {
+    "enabled": false,
+    "assume_role_arn": "",
+    "accounts": []
+  }
+}

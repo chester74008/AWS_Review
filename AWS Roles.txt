@@ -1,0 +1,2 @@
+ReadOnlyAccess
+iam:CreateAccessKey
