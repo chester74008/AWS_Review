@@ -1,89 +1,222 @@
 # AWS Security Review - CIS Benchmark Automation
 
-This project automates AWS security reviews based on the **CIS Amazon Web Services Foundations Benchmark v5.0.0**.
+Automate AWS security reviews based on the **CIS Amazon Web Services Foundations Benchmark v5.0.0**.
 
-## Overview
+## Quick Start
 
-The CIS AWS Foundations Benchmark provides prescriptive guidance for configuring security options for AWS. This project helps automate the auditing of AWS accounts against these benchmarks.
+```bash
+# 1. Verify setup
+python test_setup.py
 
-## Benchmark Coverage
+# 2. Run full audit
+python scripts/run_audit.py --category all --profile default
 
-- **Total Controls**: 72 recommendations
-- **Level 1 (Basic security)**: 50 controls
-- **Level 2 (Advanced security)**: 31 controls
+# 3. View results
+python -m json.tool reports/audit_*/audit_summary.json
+```
 
-### Control Categories
+See [docs/guides/QUICKSTART.md](docs/guides/QUICKSTART.md) for detailed setup instructions.
 
-1. **Identity and Access Management (IAM)** - 21 controls
-2. **Storage (S3, RDS, EFS)** - 10 controls
-3. **Logging and Monitoring (CloudTrail, Config, VPC)** - 20 controls
-4. **Monitoring and Alerting** - 15 controls
-5. **Networking** - 6 controls
+## Current Capabilities
+
+**30 Automated Compliance Checks** (42% coverage of CIS controls)
+
+| Section | Checks | Status |
+|---------|--------|--------|
+| IAM (Identity & Access) | 13 | ✅ Complete |
+| Storage (S3, RDS, EFS) | 9 | ✅ Complete |
+| Logging (CloudTrail, Config, VPC) | 8 | ✅ Complete |
+| Monitoring (CloudWatch) | 0 | ⚠️ Planned |
+| Networking (VPC, Security Groups) | 0 | ⚠️ Planned |
 
 ## Project Structure
 
 ```
 AWS_Review/
-├── Benchmarks/               # CIS benchmark documents
-│   └── v5.0.0/
-├── scripts/                  # Automation scripts
-│   ├── collectors/          # AWS CLI data collection scripts
-│   ├── analyzers/           # Analysis and compliance checking
-│   └── reporters/           # Report generation
-├── config/                   # Configuration files
-├── reports/                  # Generated audit reports
-└── cis_aws_controls.json    # Parsed benchmark controls
+├── README.md                      # This file
+├── requirements.txt               # Python dependencies
+├── test_setup.py                  # Environment verification
+├── cis_aws_controls.json          # Parsed CIS controls (72 total)
+│
+├── scripts/
+│   ├── run_audit.py               # Main orchestrator
+│   ├── collectors/                # AWS data collection
+│   │   ├── iam_collector.py       # IAM data
+│   │   ├── storage_collector.py   # S3, RDS, EFS data
+│   │   └── logging_collector.py   # CloudTrail, Config, VPC data
+│   └── analyzers/                 # Compliance analysis
+│       ├── iam_analyzer.py        # 13 IAM checks
+│       ├── storage_analyzer.py    # 9 storage checks
+│       └── logging_analyzer.py    # 8 logging checks
+│
+├── config/                        # Configuration files
+│   └── config.example.json        # Example config
+│
+├── reports/                       # Generated audit reports (git-ignored)
+│   └── audit_TIMESTAMP/
+│       ├── audit_summary.json     # Overall compliance
+│       ├── iam_compliance_report.json
+│       ├── storage_compliance_report.json
+│       └── logging_compliance_report.json
+│
+├── docs/                          # Documentation
+│   ├── guides/                    # User guides
+│   │   ├── QUICKSTART.md          # 5-minute setup
+│   │   ├── TESTING_GUIDE.md       # Comprehensive testing
+│   │   ├── TESTING_STEPS.txt      # Step-by-step tests
+│   │   └── USAGE.md               # Complete usage guide
+│   │
+│   ├── reference/                 # Reference documentation
+│   │   ├── AWS_PERMISSIONS_REQUIRED.md  # Required AWS permissions
+│   │   ├── COMMON_ERRORS.md       # Error troubleshooting
+│   │   ├── QUICK_REFERENCE.md     # Command cheat sheet
+│   │   ├── SECTIONS_OVERVIEW.md   # All 72 CIS controls
+│   │   └── GIT_WORKFLOW.md        # Git commands
+│   │
+│   ├── FIXES_AND_IMPROVEMENTS.md  # Development history
+│   ├── WHATS_NEW.md               # Release notes
+│   └── PROJECT_SUMMARY.md         # Project overview
+│
+└── Benchmarks/                    # CIS benchmark documents
+    └── CIS_AWS_v5.0.0.*           # PDF and XLSX versions
 ```
 
 ## Requirements
 
-- AWS CLI v2
-- Python 3.8+
-- Required Python packages:
-  - boto3
-  - pandas
-  - openpyxl
+- **AWS CLI v2** - [Installation Guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+- **Python 3.8+**
+- **AWS Account Permissions**: `SecurityAudit` + `ViewOnlyAccess` (see [AWS_PERMISSIONS_REQUIRED.md](docs/reference/AWS_PERMISSIONS_REQUIRED.md))
+
+### Python Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+Required packages:
+- pandas
+- openpyxl
 
 ## Usage
 
-### 1. Configure AWS Credentials
+### Quick Commands
 
 ```bash
-aws configure
-```
+# Run all sections (IAM + Storage + Logging)
+python scripts/run_audit.py --category all --profile default
 
-### 2. Run Full Audit
-
-```bash
-python scripts/run_audit.py --profile default --level 1
-```
-
-### 3. Run Specific Control Category
-
-```bash
+# Run specific section
 python scripts/run_audit.py --category iam --profile default
+python scripts/run_audit.py --category storage --profile default
+python scripts/run_audit.py --category logging --profile default
+
+# Scan all regions (slow - 10-20 minutes)
+python scripts/run_audit.py --category all --profile default --all-regions
 ```
 
-## Automation Capabilities
+### View Results
 
-### Fully Automated (via AWS CLI/API)
-- IAM user credential reports
-- Access key rotation checks
-- MFA status verification
-- S3 bucket encryption and policies
-- CloudTrail configuration
-- VPC Flow Logs status
-- And many more...
+```bash
+# View summary
+python -m json.tool reports/audit_*/audit_summary.json
 
-### Manual/Partial Automation
-- Contact information verification (AWS Console only)
-- Hardware MFA verification (requires additional validation)
-- Macie configuration (API available but complex)
+# View detailed findings
+python -m json.tool reports/audit_*/iam_compliance_report.json
+python -m json.tool reports/audit_*/storage_compliance_report.json
+python -m json.tool reports/audit_*/logging_compliance_report.json
+```
 
-## Next Steps
+See [docs/reference/QUICK_REFERENCE.md](docs/reference/QUICK_REFERENCE.md) for all commands.
 
-1. Implement data collectors for each control category
-2. Build compliance analyzers
-3. Create reporting templates
-4. Add support for multiple AWS accounts/profiles
-5. Implement remediation suggestions
+## Example Output
+
+```
+================================================================================
+AUDIT SUMMARY
+================================================================================
+Overall Compliance: 65.45%
+Total Checks: 30
+
+IAM:
+  Compliance: 69.23%
+  Passed: 9/13
+  Failed: 4
+
+Storage:
+  Compliance: 66.67%
+  Passed: 6/9
+  Failed: 3
+
+Logging:
+  Compliance: 62.50%
+  Passed: 5/8
+  Failed: 3
+```
+
+## Documentation
+
+### Getting Started
+- [QUICKSTART.md](docs/guides/QUICKSTART.md) - 5-minute setup and first run
+- [TESTING_GUIDE.md](docs/guides/TESTING_GUIDE.md) - Comprehensive testing instructions
+- [USAGE.md](docs/guides/USAGE.md) - Complete usage guide
+
+### Reference
+- [AWS_PERMISSIONS_REQUIRED.md](docs/reference/AWS_PERMISSIONS_REQUIRED.md) - Required AWS permissions
+- [COMMON_ERRORS.md](docs/reference/COMMON_ERRORS.md) - Troubleshooting guide
+- [QUICK_REFERENCE.md](docs/reference/QUICK_REFERENCE.md) - Command cheat sheet
+- [SECTIONS_OVERVIEW.md](docs/reference/SECTIONS_OVERVIEW.md) - All 72 CIS controls
+
+### Development
+- [WHATS_NEW.md](docs/WHATS_NEW.md) - Release notes and new features
+- [FIXES_AND_IMPROVEMENTS.md](docs/FIXES_AND_IMPROVEMENTS.md) - Development history
+- [GIT_WORKFLOW.md](docs/reference/GIT_WORKFLOW.md) - Git workflow guide
+
+## Troubleshooting
+
+### Common Issues
+
+**Error: "The config profile (X) could not be found"**
+- Check available profiles: `aws configure list-profiles`
+- Create profile: `aws configure --profile default`
+
+**Error: "AccessDenied"**
+- Add AWS managed policies: `SecurityAudit` + `ViewOnlyAccess`
+- See [AWS_PERMISSIONS_REQUIRED.md](docs/reference/AWS_PERMISSIONS_REQUIRED.md)
+
+**Empty data collected**
+- Verify AWS credentials: `aws sts get-caller-identity --profile default`
+- Check for typos in profile name
+- Verify resources exist in your account
+
+See [COMMON_ERRORS.md](docs/reference/COMMON_ERRORS.md) for complete troubleshooting guide.
+
+## Roadmap
+
+### Implemented
+- ✅ IAM Analyzer (13 checks)
+- ✅ Storage Analyzer (9 checks)
+- ✅ Logging Analyzer (8 checks)
+- ✅ Multi-region support
+- ✅ JSON reporting
+
+### Coming Soon
+- ⚠️ CloudWatch Monitoring Analyzer (15 checks)
+- ⚠️ Networking Analyzer (9 checks)
+- ⚠️ HTML/PDF report generation
+- ⚠️ Auto-remediation framework
+
+See [FIXES_AND_IMPROVEMENTS.md](docs/FIXES_AND_IMPROVEMENTS.md) for detailed roadmap.
+
+## Security Note
+
+**Important:** This tool is READ-ONLY and only collects information. It does not make changes to your AWS account.
+
+Audit reports are stored in `reports/` directory and are **excluded from git** via `.gitignore` to protect your sensitive data.
+
+## Repository
+
+**GitHub:** https://github.com/chester74008/AWS_Review.git
+
+## License
+
+This project is for internal security auditing purposes.
