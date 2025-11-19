@@ -5,6 +5,7 @@ Analyzes collected IAM data against CIS controls
 """
 
 import json
+import pandas as pd
 from datetime import datetime, timedelta
 from typing import Dict, List, Any
 
@@ -442,6 +443,28 @@ class IAMAnalyzer:
 
         with open(filename, 'w') as f:
             json.dump(report, f, indent=2)
+
+        # Also save as CSV
+        self.save_csv(filename.replace('.json', '.csv'))
+
+    def save_csv(self, filename: str):
+        """Save findings to CSV file for easy Excel analysis"""
+        if not self.findings:
+            return
+
+        # Convert findings to DataFrame
+        df = pd.DataFrame(self.findings)
+
+        # Reorder columns for better readability
+        columns = ['control', 'title', 'status', 'severity', 'details', 'timestamp']
+        df = df[columns]
+
+        # Sort by control number (treat as string to preserve order)
+        df = df.sort_values('control')
+
+        # Save to CSV
+        df.to_csv(filename, index=False)
+        print(f"CSV report saved: {filename}")
 
         print(f"Report saved to: {filename}")
 

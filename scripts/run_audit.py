@@ -96,6 +96,50 @@ def run_logging_audit(profile: str, region: str, output_dir: str, all_regions: b
     return analyzer.findings
 
 
+def generate_consolidated_csv(all_findings: dict, output_dir: str):
+    """Generate a consolidated CSV file with all findings from all sections"""
+    import pandas as pd
+
+    # Combine all findings with section identifier
+    all_records = []
+    for section, findings in all_findings.items():
+        for finding in findings:
+            record = finding.copy()
+            record['section'] = section
+            all_records.append(record)
+
+    if not all_records:
+        return
+
+    # Create DataFrame
+    df = pd.DataFrame(all_records)
+
+    # Reorder columns for better readability
+    columns = ['section', 'control', 'title', 'status', 'severity', 'details', 'timestamp']
+    df = df[columns]
+
+    # Sort by section and control number
+    df = df.sort_values(['section', 'control'])
+
+    # Save consolidated CSV
+    csv_file = os.path.join(output_dir, "audit_all_findings.csv")
+    df.to_csv(csv_file, index=False)
+    print(f"\nConsolidated CSV report saved: {csv_file}")
+
+    # Also create a failures-only CSV for quick action
+    failures_df = df[df['status'] == 'FAIL'].copy()
+    if not failures_df.empty:
+        # Sort failures by severity (CRITICAL > HIGH > MEDIUM > LOW)
+        severity_order = {'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3}
+        failures_df['severity_rank'] = failures_df['severity'].map(severity_order)
+        failures_df = failures_df.sort_values(['severity_rank', 'section', 'control'])
+        failures_df = failures_df.drop('severity_rank', axis=1)
+
+        failures_file = os.path.join(output_dir, "audit_failures_only.csv")
+        failures_df.to_csv(failures_file, index=False)
+        print(f"Failures-only CSV saved: {failures_file}")
+
+
 def generate_summary_report(all_findings: dict, output_dir: str):
     """Generate a summary report of all findings"""
     import json
@@ -124,10 +168,13 @@ def generate_summary_report(all_findings: dict, output_dir: str):
     total_passed = sum(s["passed"] for s in summary["by_section"].values())
     summary["overall_compliance_percentage"] = round((total_passed / total_checks * 100) if total_checks else 0, 2)
 
-    # Save summary
+    # Save summary JSON
     summary_file = os.path.join(output_dir, "audit_summary.json")
     with open(summary_file, 'w') as f:
         json.dump(summary, f, indent=2)
+
+    # Create consolidated CSV with all findings
+    generate_consolidated_csv(all_findings, output_dir)
 
     # Print summary to console
     print("\n" + "="*80)

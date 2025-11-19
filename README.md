@@ -54,10 +54,15 @@ AWS_Review/
 │
 ├── reports/                       # Generated audit reports (git-ignored)
 │   └── audit_TIMESTAMP/
-│       ├── audit_summary.json     # Overall compliance
-│       ├── iam_compliance_report.json
-│       ├── storage_compliance_report.json
-│       └── logging_compliance_report.json
+│       ├── audit_summary.json                # Overall compliance summary
+│       ├── audit_all_findings.csv            # All findings (CSV)
+│       ├── audit_failures_only.csv           # Failures only (CSV)
+│       ├── iam_compliance_report.json        # IAM findings (JSON)
+│       ├── iam_compliance_report.csv         # IAM findings (CSV)
+│       ├── storage_compliance_report.json    # Storage findings (JSON)
+│       ├── storage_compliance_report.csv     # Storage findings (CSV)
+│       ├── logging_compliance_report.json    # Logging findings (JSON)
+│       └── logging_compliance_report.csv     # Logging findings (CSV)
 │
 ├── docs/                          # Documentation
 │   ├── guides/                    # User guides
@@ -117,13 +122,25 @@ python scripts/run_audit.py --category all --profile default --all-regions
 ### View Results
 
 ```bash
-# View summary
+# View JSON summary
 python -m json.tool reports/audit_*/audit_summary.json
 
-# View detailed findings
+# View detailed findings (JSON)
 python -m json.tool reports/audit_*/iam_compliance_report.json
 python -m json.tool reports/audit_*/storage_compliance_report.json
 python -m json.tool reports/audit_*/logging_compliance_report.json
+
+# Open CSV reports in Excel
+# All findings across all sections
+reports/audit_*/audit_all_findings.csv
+
+# Failures only, sorted by severity
+reports/audit_*/audit_failures_only.csv
+
+# Individual section CSVs
+reports/audit_*/iam_compliance_report.csv
+reports/audit_*/storage_compliance_report.csv
+reports/audit_*/logging_compliance_report.csv
 ```
 
 See [docs/reference/QUICK_REFERENCE.md](docs/reference/QUICK_REFERENCE.md) for all commands.
@@ -198,6 +215,7 @@ See [COMMON_ERRORS.md](docs/reference/COMMON_ERRORS.md) for complete troubleshoo
 - ✅ Logging Analyzer (8 checks)
 - ✅ Multi-region support
 - ✅ JSON reporting
+- ✅ CSV export (Excel-ready)
 
 ### Coming Soon
 - ⚠️ CloudWatch Monitoring Analyzer (15 checks)
