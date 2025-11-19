@@ -19,14 +19,14 @@ See [docs/guides/QUICKSTART.md](docs/guides/QUICKSTART.md) for detailed setup in
 
 ## Current Capabilities
 
-**30 Automated Compliance Checks** (42% coverage of CIS controls)
+**46 Automated Compliance Checks** (64% coverage of CIS controls)
 
 | Section | Checks | Status |
 |---------|--------|--------|
 | IAM (Identity & Access) | 13 | ✅ Complete |
 | Storage (S3, RDS, EFS) | 9 | ✅ Complete |
 | Logging (CloudTrail, Config, VPC) | 8 | ✅ Complete |
-| Monitoring (CloudWatch) | 0 | ⚠️ Planned |
+| Monitoring (CloudWatch Metric Filters & Alarms) | 16 | ✅ Complete |
 | Networking (VPC, Security Groups) | 0 | ⚠️ Planned |
 
 ## Project Structure
@@ -47,7 +47,8 @@ AWS_Review/
 │   └── analyzers/                 # Compliance analysis
 │       ├── iam_analyzer.py        # 13 IAM checks
 │       ├── storage_analyzer.py    # 9 storage checks
-│       └── logging_analyzer.py    # 8 logging checks
+│       ├── logging_analyzer.py    # 8 logging checks
+│       └── monitoring_analyzer.py # 16 monitoring checks
 │
 ├── config/                        # Configuration files
 │   └── config.example.json        # Example config
@@ -62,7 +63,9 @@ AWS_Review/
 │       ├── storage_compliance_report.json    # Storage findings (JSON)
 │       ├── storage_compliance_report.csv     # Storage findings (CSV)
 │       ├── logging_compliance_report.json    # Logging findings (JSON)
-│       └── logging_compliance_report.csv     # Logging findings (CSV)
+│       ├── logging_compliance_report.csv     # Logging findings (CSV)
+│       ├── monitoring_compliance_report.json # Monitoring findings (JSON)
+│       └── monitoring_compliance_report.csv  # Monitoring findings (CSV)
 │
 ├── docs/                          # Documentation
 │   ├── guides/                    # User guides
@@ -107,13 +110,14 @@ Required packages:
 ### Quick Commands
 
 ```bash
-# Run all sections (IAM + Storage + Logging)
+# Run all sections (IAM + Storage + Logging + Monitoring)
 python scripts/run_audit.py --category all --profile default
 
 # Run specific section
 python scripts/run_audit.py --category iam --profile default
 python scripts/run_audit.py --category storage --profile default
 python scripts/run_audit.py --category logging --profile default
+python scripts/run_audit.py --category monitoring --profile default
 
 # Scan all regions (slow - 10-20 minutes)
 python scripts/run_audit.py --category all --profile default --all-regions
@@ -129,6 +133,7 @@ python -m json.tool reports/audit_*/audit_summary.json
 python -m json.tool reports/audit_*/iam_compliance_report.json
 python -m json.tool reports/audit_*/storage_compliance_report.json
 python -m json.tool reports/audit_*/logging_compliance_report.json
+python -m json.tool reports/audit_*/monitoring_compliance_report.json
 
 # Open CSV reports in Excel
 # All findings across all sections
@@ -141,6 +146,7 @@ reports/audit_*/audit_failures_only.csv
 reports/audit_*/iam_compliance_report.csv
 reports/audit_*/storage_compliance_report.csv
 reports/audit_*/logging_compliance_report.csv
+reports/audit_*/monitoring_compliance_report.csv
 ```
 
 See [docs/reference/QUICK_REFERENCE.md](docs/reference/QUICK_REFERENCE.md) for all commands.
@@ -152,7 +158,7 @@ See [docs/reference/QUICK_REFERENCE.md](docs/reference/QUICK_REFERENCE.md) for a
 AUDIT SUMMARY
 ================================================================================
 Overall Compliance: 65.45%
-Total Checks: 30
+Total Checks: 46
 
 IAM:
   Compliance: 69.23%
@@ -168,6 +174,12 @@ Logging:
   Compliance: 62.50%
   Passed: 5/8
   Failed: 3
+
+Monitoring:
+  Compliance: 18.75%
+  Passed: 3/16
+  Failed: 12
+  Manual: 1
 ```
 
 ## Documentation
@@ -213,12 +225,13 @@ See [COMMON_ERRORS.md](docs/reference/COMMON_ERRORS.md) for complete troubleshoo
 - ✅ IAM Analyzer (13 checks)
 - ✅ Storage Analyzer (9 checks)
 - ✅ Logging Analyzer (8 checks)
+- ✅ Monitoring Analyzer (16 checks - metric filters & alarms)
 - ✅ Multi-region support
 - ✅ JSON reporting
 - ✅ CSV export (Excel-ready)
+- ✅ 64% CIS coverage (46/72 controls)
 
 ### Coming Soon
-- ⚠️ CloudWatch Monitoring Analyzer (15 checks)
 - ⚠️ Networking Analyzer (9 checks)
 - ⚠️ HTML/PDF report generation
 - ⚠️ Auto-remediation framework

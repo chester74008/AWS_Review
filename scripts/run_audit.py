@@ -19,6 +19,7 @@ from logging_collector import LoggingCollector
 from iam_analyzer import IAMAnalyzer
 from storage_analyzer import StorageAnalyzer
 from logging_analyzer import LoggingAnalyzer
+from monitoring_analyzer import MonitoringAnalyzer
 
 
 def print_banner():
@@ -75,9 +76,9 @@ def run_storage_audit(profile: str, region: str, output_dir: str, all_regions: b
 
 
 def run_logging_audit(profile: str, region: str, output_dir: str, all_regions: bool = False):
-    """Run Logging and Monitoring audit"""
+    """Run Logging audit (Section 3)"""
     print("\n" + "="*80)
-    print("SECTION 3 & 4: LOGGING AND MONITORING")
+    print("SECTION 3: LOGGING (CloudTrail, Config, VPC Flow Logs)")
     print("="*80)
 
     # Collect data
@@ -90,6 +91,32 @@ def run_logging_audit(profile: str, region: str, output_dir: str, all_regions: b
     print("\n" + "-"*80)
     report_file = os.path.join(output_dir, "logging_compliance_report.json")
     analyzer = LoggingAnalyzer(data_file)
+    analyzer.analyze_all()
+    analyzer.save_report(report_file)
+
+    return analyzer.findings
+
+
+def run_monitoring_audit(profile: str, region: str, output_dir: str, all_regions: bool = False):
+    """Run Monitoring audit (Section 4 - CloudWatch metric filters and alarms)"""
+    print("\n" + "="*80)
+    print("SECTION 4: MONITORING (CloudWatch Metric Filters & Alarms)")
+    print("="*80)
+
+    # Use the same data file as logging (it contains CloudWatch data)
+    data_file = os.path.join(output_dir, "logging_data.json")
+
+    # Check if logging data exists
+    if not os.path.exists(data_file):
+        print("Warning: Logging data not found. Running logging collector first...")
+        collector = LoggingCollector(profile=profile, region=region)
+        collector.collect_all(all_regions=all_regions)
+        collector.save_to_file(data_file)
+
+    # Analyze monitoring compliance
+    print("\n" + "-"*80)
+    report_file = os.path.join(output_dir, "monitoring_compliance_report.json")
+    analyzer = MonitoringAnalyzer(data_file)
     analyzer.analyze_all()
     analyzer.save_report(report_file)
 
@@ -218,7 +245,7 @@ Examples:
 
     parser.add_argument("--profile", default="default", help="AWS profile to use (default: default)")
     parser.add_argument("--region", default="us-east-1", help="Primary AWS region (default: us-east-1)")
-    parser.add_argument("--category", choices=["iam", "storage", "logging", "all"], default="all",
+    parser.add_argument("--category", choices=["iam", "storage", "logging", "monitoring", "all"], default="all",
                         help="Category to audit (default: all)")
     parser.add_argument("--level", type=int, choices=[1, 2], help="CIS Level to audit (1 or 2)")
     parser.add_argument("--all-regions", action="store_true", help="Collect data from all AWS regions")
@@ -256,6 +283,10 @@ Examples:
         if args.category in ["logging", "all"]:
             findings = run_logging_audit(args.profile, args.region, output_dir, args.all_regions)
             all_findings["Logging"] = findings
+
+        if args.category in ["monitoring", "all"]:
+            findings = run_monitoring_audit(args.profile, args.region, output_dir, args.all_regions)
+            all_findings["Monitoring"] = findings
 
         # Generate summary
         if all_findings:
